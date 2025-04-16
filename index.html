@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>时间进度</title>
+    <title>time progress</title>
     <style>
         :root {
             --bg-color: #1a1a1a;
             --text-color: #e0e0e0;
-            --accent-color: #834aff;
+            --accent-color: #b74aff;
             --secondary-color: #ffa16b;
+            --tertiary-color: #4ad2ff;
             --progress-bg: #333;
         }
 
@@ -86,6 +87,10 @@
             background-color: var(--secondary-color);
         }
 
+        .century-progress .progress-bar {
+            background-color: var(--tertiary-color);
+        }
+
         .progress-marks {
             position: absolute;
             top: 0;
@@ -108,6 +113,12 @@
             flex-grow: 1;
         }
 
+        .century-progress .progress-marks .mark {
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+            flex-grow: 1;
+        }
+
         .emoji {
             margin-right: 6px;
         }
@@ -123,7 +134,7 @@
 
         <div class="progress-section day-progress">
             <div class="progress-label">
-                <span><span class="emoji">⏰</span> 今天已经过去了...</span>
+                <span><span class="emoji">⏰</span> This day is...loading.</span>
                 <span id="day-percentage">0.00%</span>
             </div>
             <div class="progress-container">
@@ -134,12 +145,23 @@
 
         <div class="progress-section year-progress">
             <div class="progress-label">
-                <span><span class="emoji">📅</span> 今年已经过去了...</span>
+                <span><span class="emoji">📅</span> This year is...loading.</span>
                 <span id="year-percentage">0.00%</span>
             </div>
             <div class="progress-container">
                 <div class="progress-bar" id="year-progress-bar" style="width: 0%"></div>
                 <div class="progress-marks" id="year-marks"></div>
+            </div>
+        </div>
+
+        <div class="progress-section century-progress">
+            <div class="progress-label">
+                <span><span class="emoji">🌍</span> This century is...loading.</span>
+                <span id="century-percentage">0.00%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="century-progress-bar" style="width: 0%"></div>
+                <div class="progress-marks" id="century-marks"></div>
             </div>
         </div>
     </div>
@@ -170,6 +192,22 @@
             const now = new Date();
             const start = new Date(now.getFullYear(), 0, 1); // 今年1月1日
             const end = new Date(now.getFullYear() + 1, 0, 1); // 明年1月1日
+
+            const totalMs = end - start;
+            const elapsedMs = now - start;
+
+            return (elapsedMs / totalMs) * 100;
+        }
+
+        // 计算本世纪进度
+        function calculateCenturyProgress() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const centuryStartYear = Math.floor(currentYear / 100) * 100 + 1; // e.g., 2001 for 21st century
+            const centuryEndYear = centuryStartYear + 99; // e.g., 2100 for 21st century
+
+            const start = new Date(centuryStartYear, 0, 1);
+            const end = new Date(centuryEndYear, 11, 31, 23, 59, 59, 999);
 
             const totalMs = end - start;
             const elapsedMs = now - start;
@@ -212,12 +250,18 @@
             const yearProgress = calculateYearProgress();
             document.getElementById('year-percentage').textContent = formatPercentage(yearProgress);
             document.getElementById('year-progress-bar').style.width = `${yearProgress}%`;
+
+            // 更新本世纪进度
+            const centuryProgress = calculateCenturyProgress();
+            document.getElementById('century-percentage').textContent = formatPercentage(centuryProgress);
+            document.getElementById('century-progress-bar').style.width = `${centuryProgress}%`;
         }
 
         // 初始化时间刻度
         function initializeMarks() {
             createTimeMarks('day-marks', 24); // 24小时
             createTimeMarks('year-marks', 12); // 12个月
+            createTimeMarks('century-marks', 10); // 10个十年
         }
 
         // 初始化并定时更新
