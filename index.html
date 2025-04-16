@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间进度</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --accent-color: #834aff;
+            --secondary-color: #ffa16b;
+            --progress-bg: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: "SF Mono", Monaco, Menlo, Consolas, "Liberation Mono", monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .current-time {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .date-display {
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 30px;
+        }
+
+        .progress-section {
+            margin-bottom: 40px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .progress-container {
+            height: 12px;
+            background-color: var(--progress-bg);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.5s ease-out;
+        }
+
+        .day-progress .progress-bar {
+            background-color: var(--accent-color);
+        }
+
+        .year-progress .progress-bar {
+            background-color: var(--secondary-color);
+        }
+
+        .progress-marks {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .day-progress .progress-marks .mark {
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+            flex-grow: 1;
+        }
+
+        .year-progress .progress-marks .mark {
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+            flex-grow: 1;
+        }
+
+        .emoji {
+            margin-right: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="current-time" id="current-time">00:00:00</div>
+            <div class="date-display" id="date-display">2023-01-01</div>
+        </div>
+
+        <div class="progress-section day-progress">
+            <div class="progress-label">
+                <span><span class="emoji">⏰</span> 今天已经过去了...</span>
+                <span id="day-percentage">0.00%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="day-progress-bar" style="width: 0%"></div>
+                <div class="progress-marks" id="day-marks"></div>
+            </div>
+        </div>
+
+        <div class="progress-section year-progress">
+            <div class="progress-label">
+                <span><span class="emoji">📅</span> 今年已经过去了...</span>
+                <span id="year-percentage">0.00%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="year-progress-bar" style="width: 0%"></div>
+                <div class="progress-marks" id="year-marks"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 创建时间刻度标记
+        function createTimeMarks(containerId, count) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const mark = document.createElement('div');
+                mark.className = 'mark';
+                container.appendChild(mark);
+            }
+        }
+
+        // 计算今日进度
+        function calculateDayProgress() {
+            const now = new Date();
+            const totalSecondsInDay = 24 * 60 * 60;
+            const secondsPassed = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            return (secondsPassed / totalSecondsInDay) * 100;
+        }
+
+        // 计算今年进度
+        function calculateYearProgress() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1); // 今年1月1日
+            const end = new Date(now.getFullYear() + 1, 0, 1); // 明年1月1日
+
+            const totalMs = end - start;
+            const elapsedMs = now - start;
+
+            return (elapsedMs / totalMs) * 100;
+        }
+
+        // 格式化数字为两位数
+        function formatTwoDigits(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        // 格式化百分比
+        function formatPercentage(percentage) {
+            return percentage.toFixed(2) + '%';
+        }
+
+        // 更新UI
+        function updateUI() {
+            const now = new Date();
+
+            // 更新当前时间
+            const hours = formatTwoDigits(now.getHours());
+            const minutes = formatTwoDigits(now.getMinutes());
+            const seconds = formatTwoDigits(now.getSeconds());
+            document.getElementById('current-time').textContent = `${hours}:${minutes}:${seconds}`;
+
+            // 更新日期显示
+            const year = now.getFullYear();
+            const month = formatTwoDigits(now.getMonth() + 1);
+            const day = formatTwoDigits(now.getDate());
+            document.getElementById('date-display').textContent = `${year}-${month}-${day}`;
+
+            // 更新今日进度
+            const dayProgress = calculateDayProgress();
+            document.getElementById('day-percentage').textContent = formatPercentage(dayProgress);
+            document.getElementById('day-progress-bar').style.width = `${dayProgress}%`;
+
+            // 更新今年进度
+            const yearProgress = calculateYearProgress();
+            document.getElementById('year-percentage').textContent = formatPercentage(yearProgress);
+            document.getElementById('year-progress-bar').style.width = `${yearProgress}%`;
+        }
+
+        // 初始化时间刻度
+        function initializeMarks() {
+            createTimeMarks('day-marks', 24); // 24小时
+            createTimeMarks('year-marks', 12); // 12个月
+        }
+
+        // 初始化并定时更新
+        function initialize() {
+            initializeMarks();
+            updateUI();
+
+            // 每100毫秒更新一次
+            setInterval(updateUI, 500);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initialize);
+
+        // 立即执行一次更新
+        updateUI();
+    </script>
+</body>
+
+</html>
